@@ -17,6 +17,13 @@ CORS(app, origins=["http://localhost:8080"])
 def test():
     return "Hello, World!"
 
+@app.route('/upload', methods=['POST'])
+def upload():
+    if 'file' not in request.files:
+        pass
+    f = request.files
+    pass
+
 @app.route('/chat', methods=['POST'])
 def chat():
     start_time = time.perf_counter()
@@ -45,8 +52,13 @@ def chat():
 
     return jsonify({"response": resp, "sources": sources}), 200
 
+@app.route('/generate_flashcards', methods=['POST'])
+def generate_flashcards():
+    pass
 
-
+@app.route('/generate_quiz', methods=['POST'])
+def generate_quiz():
+    pass
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8080)
