@@ -1,1 +1,8 @@
 venv/
+pycache/
+*.pyc
+*.egg-info/
+chroma_db/
+.DS_Store # macOS files
+.vscode # Local Visual Studio Code settings
+*.log
