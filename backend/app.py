@@ -19,18 +19,32 @@ def test():
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    start_time = time.time()
+    start_time = time.perf_counter()
     data = request.json
     query = data.get('query', '')
 
-    is_safe, resp = validate.validate_query(query)
+    is_safe, msg = validate.validate_query(query)
 
-    # input query validation
+    # input query validation/safety check
     if not is_safe:
-        telemetry.log("chat", len(query), 0, time.time() - start_time, success=False)
-        return jsonify({"response": resp}), 400
+        telemetry.log("chat", len(query), 0, time.perf_counter() - start_time, success=False)
+        return jsonify({"response": msg}), 400
     
-    #
+    # RAG retrival logic
+    context, sources = rag.retrieve_context(query)
+
+    if not context:
+        resp = "I couldn't find any sources. Please ensure you have uploaded at least one pdf or make sure the file is not corrupted."
+        telemetry.log("chat", len(query), 0, time.time() - start_time)
+        return jsonify({"response":resp, "sources":[]})
+    
+    # call model to generate response
+    resp = llm.chat(context, query)
+
+    telemetry.log(...)
+
+    return jsonify({"response": resp, "sources": sources}), 200
+
 
 
 
