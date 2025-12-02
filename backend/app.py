@@ -80,17 +80,62 @@ def chat():
     # call model to generate response
     resp = llm.chat(context, query)
 
-    telemetry.log(...)
+    telemetry.log("chat", len(query), len(resp), time.perf_counter() - start_time)
 
     return jsonify({"response": resp, "sources": sources}), 200
 
 @app.route('/generate_flashcards', methods=['POST'])
 def generate_flashcards():
-    pass
+    start_time = time.perf_counter()
+    
+    # Get context from RAG
+    context = rag.get_random_context(n=5)
+    
+    if not context:
+        return jsonify({"error": "No documents uploaded to generate cards from"}), 400
+    
+    # Generate via LLM module
+    response = llm.generate_flashcards(context)
+    
+    # Attempt to parse JSON
+    try:
+        # regex to find the array part if LLM yaps
+        match = re.search(r'\[.*\]', response, re.DOTALL)
+        if match:
+            flashcards = json.loads(match.group())
+        else:
+            flashcards = []
+    except:
+        flashcards = [{"front": "Error parsing LLM output", "back": "Please try again"}]
+
+    telemetry.log_telemetry("flashcards", 0, len(response), time.perf_counter() - start_time)
+    return jsonify({"flashcards": flashcards})
 
 @app.route('/generate_quiz', methods=['POST'])
 def generate_quiz():
-    pass
+    start_time = time.perf_counter()
+    
+    # Getting context from RAG
+    context = rag.get_random_context(n=5)
+    
+    if not context:
+        return jsonify({"error": "No documents uploaded"}), 400
+    
+    # generating quiz via llm
+    response = llm.generate_quiz(context)
+    
+    # extract json from response
+    try:
+        match = re.search(r'\[.*\]', response, re.DOTALL)
+        if match:
+            quiz = json.loads(match.group())
+        else:
+            quiz = []
+    except:
+        quiz = []
+        
+    telemetry.log_telemetry("quiz", 0, len(response), time.perf_counter() - start_time)
+    return jsonify({"quiz": quiz})
 
 if __name__ == "__main__":
     print("---------------------------------------------------------")
