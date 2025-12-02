@@ -2,8 +2,8 @@ import re
 
 def validate_input(user_text):
     # 1. Length Check
-    if len(user_text) > 2000:
-        return False, "Input too long. Please keep queries under 2000 characters."
+    if len(user_text) > 5000:
+        return False, "Input too long. Please keep queries under 5000 characters."
     
     # 2. Injection Prevention (Basic patterns)
     forbidden_patterns = [
