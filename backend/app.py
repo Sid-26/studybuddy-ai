@@ -18,7 +18,8 @@ UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:9000"])
+app.secret_key = 'super_secret_dev_key_change_in_prod'
+CORS(app, supports_credentials=True, origins=["http://localhost:9000", "http://localhost:8080", "http://localhost:5173", "http://localhost:3000"])
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 @app.route('/')
@@ -77,9 +78,24 @@ def chat():
         telemetry.log("chat", len(query), 0, time.time() - start_time)
         return jsonify({"response":resp, "sources":[]})
     
-    # call model to generate response
-    resp = llm.chat(context, query)
+    # Retrieve chat history from session (defaults to empty list)
+    chat_history = session.get('chat_history', [])
 
+    llm_history = [
+        {"role": msg["role"], "content": msg["content"]} 
+        for msg in chat_history
+    ]
+    
+    # call model to generate response
+    resp = llm.chat(context, query, llm_history)
+
+    chat_history.append({"role": "user", "content": query})
+    # Store the response AND the sources used for this specific answer
+    chat_history.append({"role": "assistant", "content": resp, "sources": sources})
+
+    # Limit to last 6 messages (3 turns) to prevent exceeding 4KB cookie limit
+    session['chat_history'] = chat_history[-6:]
+    
     telemetry.log("chat", len(query), len(resp), time.perf_counter() - start_time)
 
     return jsonify({"response": resp, "sources": sources}), 200
