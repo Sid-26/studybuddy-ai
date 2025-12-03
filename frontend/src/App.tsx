@@ -14,11 +14,10 @@ import {
   Sparkles,
   Play,
   CheckCircle2,
-  Plus,
-  Trash2
+  Plus
 } from 'lucide-react';
 
-import "./index.css" // DO NOT REMOVE OR ELSE CSS WILL BREAK
+import "./index.css"; // MUST INCLUDE THIS OR CSS WILL BREAK
 
 // ==========================================
 // 1. SHARED TYPES & CONFIG
@@ -31,6 +30,7 @@ type TabType = 'chat' | 'flashcards' | 'quiz';
 interface Message {
   role: 'user' | 'bot';
   text: string;
+  sources?: string[];
 }
 
 interface Flashcard {
@@ -71,8 +71,8 @@ document.head.appendChild(style);
 interface SidebarProps {
   activeTab: TabType;
   setActiveTab: (tab: TabType) => void;
-  onFileSelect: (file: File) => Promise<boolean>; // Returns success/fail
-  files: string[]; // List of filenames
+  onFileSelect: (file: File) => Promise<boolean>;
+  files: string[];
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onFileSelect, files }) => {
@@ -83,7 +83,6 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onFileSelect
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
       
-      // Prevent duplicates in UI
       if (files.includes(selectedFile.name)) {
         setUploadStatus("File already added");
         setTimeout(() => setUploadStatus(""), 2000);
@@ -102,9 +101,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onFileSelect
       }
       
       setIsUploading(false);
-      setTimeout(() => setUploadStatus(""), 2000); // Clear status after delay
+      setTimeout(() => setUploadStatus(""), 2000);
       
-      // Reset input
       e.target.value = '';
     }
   };
@@ -148,7 +146,6 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onFileSelect
           </span>
         </div>
         
-        {/* File List */}
         <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 mb-4 pr-1">
           {files.length === 0 ? (
             <div className="text-center py-8 px-4 border-2 border-dashed border-slate-800 rounded-xl">
@@ -171,7 +168,6 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onFileSelect
           )}
         </div>
 
-        {/* Upload Area */}
         <div className="group relative border-2 border-dashed border-slate-700 rounded-xl p-4 text-center hover:bg-slate-800/50 hover:border-blue-500/50 transition-all cursor-pointer bg-slate-900/50">
           <input 
             type="file" 
@@ -243,14 +239,19 @@ const ChatView: React.FC<{ hasFiles: boolean }> = ({ hasFiles }) => {
       const res = await fetch(`${API_URL}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Important for session cookies
         body: JSON.stringify({ query: userMsg }),
       });
       const data = await res.json();
       
       if (res.ok) {
-        setMessages(prev => [...prev, { role: 'bot', text: data.response }]);
+        setMessages(prev => [...prev, { 
+            role: 'bot', 
+            text: data.response,
+            sources: data.sources 
+        }]);
       } else {
-        setMessages(prev => [...prev, { role: 'bot', text: "Sorry, I encountered an error reading the notes." }]);
+        setMessages(prev => [...prev, { role: 'bot', text: `Error: ${data.response || "Something went wrong"}` }]);
       }
     } catch (err) {
       setMessages(prev => [...prev, { role: 'bot', text: "Error connecting to the study server." }]);
@@ -277,6 +278,11 @@ const ChatView: React.FC<{ hasFiles: boolean }> = ({ hasFiles }) => {
                 : 'bg-slate-800 border border-slate-700 text-slate-200 rounded-bl-none'
             }`}>
               {msg.text}
+              {msg.sources && msg.sources.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-slate-600/50 text-xs text-slate-400">
+                      <span className="font-semibold text-blue-400">Sources:</span> {msg.sources.join(", ")}
+                  </div>
+              )}
             </div>
 
             {msg.role === 'user' && (
@@ -294,7 +300,7 @@ const ChatView: React.FC<{ hasFiles: boolean }> = ({ hasFiles }) => {
              </div>
              <div className="bg-slate-800 border border-slate-700 rounded-2xl rounded-bl-none px-5 py-3.5 flex items-center gap-2">
                <Loader2 className="w-4 h-4 animate-spin text-blue-400" /> 
-               <span className="text-sm text-slate-400">Analyzing context...</span>
+               <span className="text-sm text-slate-400">Thinking...</span>
              </div>
           </div>
         )}
@@ -588,7 +594,6 @@ function App() {
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
         onFileSelect={handleFileSelect}
-        // currentFile={null} // Deprecated prop, not used in new design
         files={uploadedFiles}
       />
 
@@ -599,7 +604,7 @@ function App() {
           </h2>
           <div className="flex items-center gap-2 text-xs text-slate-400">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-            Model: Llama3 (Local)
+            Model: Llama3.1 8B
           </div>
         </header>
 
