@@ -1,11 +1,16 @@
 import requests
 import os
+import sys
 
 # config
 OLLAMA_BASE_URL = os.getenv("OLLAMA_API_URL", "http://localhost:11434")
 GENERATE_URL = f"{OLLAMA_BASE_URL}/api/generate"
 CHAT_URL = f"{OLLAMA_BASE_URL}/api/chat"
-MODEL_NAME = "llama3.1:8b"
+MODEL_NAME = "llama3.1"
+
+raw_url = os.getenv("OLLAMA_API_URL", "http://localhost:11434")
+base_url = raw_url.rstrip('/').replace('/api', '')
+print(f"DEBUG: LLM connecting to: {base_url}", file=sys.stderr)
 
 # def _query_ollama(prompt, system_prompt): # helper function to interop with ollama
 #     payload = {
@@ -33,6 +38,7 @@ def _generate(prompt, system_prompt):
         "stream": False
     }
     try:
+        print(payload)
         response = requests.post(GENERATE_URL, json=payload)
         response.raise_for_status()
         return response.json().get('response', '')
@@ -56,7 +62,7 @@ def _chat(messages):
         # Chat endpoint returns 'message' object inside 'message' key
         return response.json().get('message', {}).get('content', '')
     except requests.exceptions.RequestException as e:
-        print(f"Ollama Chat Error: {e}")
+        print(f"Ollama Chat Error: {e}",flush=True)
         return "Error connecting to LLM."
     
 def chat(context, query, chat_history=None):
@@ -89,13 +95,15 @@ def chat(context, query, chat_history=None):
 
 def generate_flashcards(context):
     system_prompt = (
-        "You are a study aid generator. "
+        "You are a study aid flashcard generator. "
         "Output ONLY valid JSON. "
         "Do not include markdown formatting (like ```json), introductions, or explanations."
+        "Please avoid flashcards in the nature of'What is missing in blank?' as users don't have the added context"
+        "Avoid code related questions"
     )
     
     prompt = f"""
-    Based on the following text, generate 3 study flashcards.
+    Based on the following text, generate 10 study flashcards.
     Format strictly as a JSON array of objects: [{{"front": "question", "back": "answer"}}, ...]
     
     Text: {context}
@@ -108,6 +116,7 @@ def generate_quiz(context):
         "You are a quiz generator. "
         "Output ONLY valid JSON. "
         "Do not include markdown formatting (like ```json), introductions, or explanations."
+        "Please make the nature of the question always has the needed context in text only as interface only accepts text, no questions such as 'What is missing in the provided code?'"
     )
     
     prompt = f"""

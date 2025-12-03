@@ -94,7 +94,7 @@ def get_random_context(n=3):
     if collection.count() == 0:
         return ""
         
-    # .peek() returns the first n items; good enough for "random" generation context in this scope
+    # .peek() returns the first n items; good enough for "random" generation context in this scope, it is deterministic unless we use random.sample
     data = collection.peek(limit=n)
     if data['documents']:
         # documents is a list of documents

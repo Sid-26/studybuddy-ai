@@ -3,9 +3,10 @@ import json
 
 LOG_FILE = "telemetry_logs.jsonl"
 
-def log_telemetry(pathway, prompt_len, response_len, latency, success=True):
+def log(pathway, endpoint, prompt_len, response_len, latency, success=True):
     entry = {
-        "timestamp": time.time(),
+        "timestamp": time.perf_counter(),
+        "endpoint": endpoint,
         "pathway": pathway,
         "latency_sec": round(latency, 4),
         "input_length": prompt_len,

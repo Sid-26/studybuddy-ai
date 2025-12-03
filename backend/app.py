@@ -5,17 +5,19 @@ import re
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
+from dotenv import load_dotenv 
 
 
 # importing all the python modules as needed
-import backend.llm as llm
-import backend.rag as rag
-import backend.validate as validate
-import backend.telemetry as telemetry
+import llm 
+import rag 
+import validate 
+import telemetry 
 
 # configs for flask app
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = 'super_secret_dev_key_change_in_prod'
@@ -49,7 +51,7 @@ def upload():
         # Call RAG module to process
         success, msg = rag.ingest_file(filepath, filename)
         
-        # Clean up the file after processing (optional, but good practice)
+        # Clean up the file after processing 
         os.remove(filepath)
         
         if success:
@@ -67,7 +69,7 @@ def chat():
 
     # input query validation/safety check
     if not is_safe:
-        telemetry.log("chat", len(query), 0, time.perf_counter() - start_time, success=False)
+        telemetry.log("blocked", "/chat", len(query), 0, time.perf_counter() - start_time, success=False)
         return jsonify({"response": msg}), 400
     
     # RAG retrival logic
@@ -75,7 +77,7 @@ def chat():
 
     if not context:
         resp = "I couldn't find any sources. Please ensure you have uploaded at least one pdf or make sure the file is not corrupted."
-        telemetry.log("chat", len(query), 0, time.time() - start_time)
+        telemetry.log("rag_no_context", "/chat", len(query), 0, time.time() - start_time)
         return jsonify({"response":resp, "sources":[]})
     
     # Retrieve chat history from session (defaults to empty list)
@@ -96,7 +98,7 @@ def chat():
     # Limit to last 6 messages (3 turns) to prevent exceeding 4KB cookie limit
     session['chat_history'] = chat_history[-6:]
     
-    telemetry.log("chat", len(query), len(resp), time.perf_counter() - start_time)
+    telemetry.log("rag", "/chat", len(query), len(resp), time.perf_counter() - start_time)
 
     return jsonify({"response": resp, "sources": sources}), 200
 
@@ -124,7 +126,7 @@ def generate_flashcards():
     except:
         flashcards = [{"front": "Error parsing LLM output", "back": "Please try again"}]
 
-    telemetry.log_telemetry("flashcards", 0, len(response), time.perf_counter() - start_time)
+    telemetry.log("rag","/generate_flashcards", 0, len(response), time.perf_counter() - start_time)
     return jsonify({"flashcards": flashcards})
 
 @app.route('/generate_quiz', methods=['POST'])
@@ -150,7 +152,7 @@ def generate_quiz():
     except:
         quiz = []
         
-    telemetry.log_telemetry("quiz", 0, len(response), time.perf_counter() - start_time)
+    telemetry.log("rag", "/generate_quiz", 0, len(response), time.perf_counter() - start_time)
     return jsonify({"quiz": quiz})
 
 if __name__ == "__main__":
