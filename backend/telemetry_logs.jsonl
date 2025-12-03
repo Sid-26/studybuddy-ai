@@ -10,3 +10,11 @@
 {"timestamp": 174787.7731306, "endpoint": "/generate_quiz", "pathway": "rag", "latency_sec": 23.7201, "input_length": 0, "output_length": 2661, "success": true}
 {"timestamp": 174818.6094336, "endpoint": "/chat", "pathway": "rag", "latency_sec": 4.2269, "input_length": 66, "output_length": 366, "success": true}
 {"timestamp": 174848.3723364, "endpoint": "/generate_quiz", "pathway": "rag", "latency_sec": 20.0072, "input_length": 0, "output_length": 3017, "success": true}
+{"timestamp": 182093.2446607, "endpoint": "/chat", "pathway": "rag", "latency_sec": 8.0691, "input_length": 25, "output_length": 168, "success": true}
+{"timestamp": 182107.632606, "endpoint": "/chat", "pathway": "rag", "latency_sec": 4.4389, "input_length": 20, "output_length": 341, "success": true}
+{"timestamp": 182140.4724528, "endpoint": "/generate_flashcards", "pathway": "rag", "latency_sec": 11.1491, "input_length": 0, "output_length": 1441, "success": true}
+{"timestamp": 182177.4449388, "endpoint": "/generate_quiz", "pathway": "rag", "latency_sec": 14.9833, "input_length": 0, "output_length": 2074, "success": true}
+{"timestamp": 182410.8015158, "endpoint": "/chat", "pathway": "rag", "latency_sec": 8.948, "input_length": 24, "output_length": 984, "success": true}
+{"timestamp": 182456.312105, "endpoint": "/generate_flashcards", "pathway": "rag", "latency_sec": 10.7794, "input_length": 0, "output_length": 1081, "success": true}
+{"timestamp": 182494.7210489, "endpoint": "/generate_quiz", "pathway": "rag", "latency_sec": 22.4121, "input_length": 0, "output_length": 2548, "success": true}
+{"timestamp": 182998.9786016, "endpoint": "/chat", "pathway": "rag", "latency_sec": 11.3203, "input_length": 21, "output_length": 488, "success": true}
