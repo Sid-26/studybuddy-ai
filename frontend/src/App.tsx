@@ -416,6 +416,25 @@ const QuizView: React.FC = () => {
   const [quizAnswers, setQuizAnswers] = useState<{[key: number]: string}>({});
   const [quizScore, setQuizScore] = useState<number | null>(null);
 
+  // Helper: Robustly check if a selected option matches the correct answer
+  // Handles cases like: Selected="A. Paris", Correct="A" OR Selected="Paris", Correct="A"
+  const checkAnswer = (selected: string, correct: string) => {
+    if (!selected || !correct) return false;
+    const s = selected.trim().toLowerCase();
+    const c = correct.trim().toLowerCase();
+    
+    // 1. Exact match (e.g. "Paris" == "Paris")
+    if (s === c) return true;
+    
+    // 2. Starts with match (e.g. Correct="A", Selected="A. Paris" or "A) Paris")
+    if (s.startsWith(c + ".") || s.startsWith(c + ")") || s.startsWith(c + " ")) return true;
+    
+    // 3. Reverse Starts with (e.g. Correct="A. Paris", Selected="A") - rare but possible
+    if (c.startsWith(s + ".") || c.startsWith(s + ")")) return true;
+
+    return false;
+  };
+
   const generateQuiz = async () => {
     setIsGenerating(true);
     setQuizScore(null);
@@ -434,7 +453,8 @@ const QuizView: React.FC = () => {
   const submitQuiz = () => {
     let score = 0;
     quiz.forEach((q, idx) => {
-      if (quizAnswers[idx] === q.correct_answer) score++;
+      // Use the robust checker instead of strict ===
+      if (checkAnswer(quizAnswers[idx], q.correct_answer)) score++;
     });
     setQuizScore(score);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -482,13 +502,14 @@ const QuizView: React.FC = () => {
         <div className="space-y-6">
           {quiz.map((q, idx) => {
             const isSubmitted = quizScore !== null;
-            const isCorrect = quizAnswers[idx] === q.correct_answer;
             const userAnswer = quizAnswers[idx];
+            // Check if user answer was correct using the robust helper
+            const isUserCorrect = checkAnswer(userAnswer, q.correct_answer);
 
             return (
                 <div key={idx} className={`p-6 rounded-2xl border transition-all ${
                     isSubmitted 
-                        ? isCorrect 
+                        ? isUserCorrect 
                             ? 'bg-green-900/10 border-green-500/30' 
                             : 'bg-red-900/10 border-red-500/30'
                         : 'bg-slate-800 border-slate-700'
@@ -503,9 +524,12 @@ const QuizView: React.FC = () => {
                             {q.options.map((opt, optIdx) => {
                                 let optionClass = "border-slate-700 hover:bg-slate-700/50";
                                 
+                                // Determine if this specific option is the correct one (for highlighting)
+                                const isThisOptionCorrect = checkAnswer(opt, q.correct_answer);
+
                                 if (isSubmitted) {
-                                    if (opt === q.correct_answer) optionClass = "border-green-500 bg-green-500/10 text-green-300";
-                                    else if (opt === userAnswer && opt !== q.correct_answer) optionClass = "border-red-500 bg-red-500/10 text-red-300";
+                                    if (isThisOptionCorrect) optionClass = "border-green-500 bg-green-500/10 text-green-300";
+                                    else if (userAnswer === opt && !isThisOptionCorrect) optionClass = "border-red-500 bg-red-500/10 text-red-300";
                                     else optionClass = "border-slate-700 opacity-50";
                                 } else if (userAnswer === opt) {
                                     optionClass = "border-blue-500 bg-blue-500/10 text-blue-200";

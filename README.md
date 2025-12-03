@@ -1,1 +1,2 @@
-# Study Companion LLM App
+# 📚 Study Companion LLM App
+

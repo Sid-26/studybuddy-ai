@@ -1,0 +1,64 @@
+services:
+  # --- Service 1: The AI Brain (Ollama) ---
+  ollama:
+    image: ollama/ollama:latest
+    container_name: study_companion_ollama
+    volumes:
+      # Persist the models so you don't download 4GB every time
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434" # Expose to host so you can test via Curl if needed
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      retries: 5
+
+  # --- Service 2: The Model Puller (Utility) ---
+  # Automatically downloads Llama 3 on startup
+  ollama-init:
+    image: curlimages/curl
+    container_name: ollama_puller
+    depends_on:
+      ollama:
+        condition: service_healthy
+    entrypoint: /bin/sh
+    command: >
+      -c "echo 'Waiting for Ollama API...'; 
+          sleep 5; 
+          echo 'Requesting pull of llama3.1...'; 
+          curl -X POST http://ollama:11434/api/pull -d '{\"name\": \"llama3.1\"}'; 
+          echo 'Model pull initiated/completed.'"
+
+  # --- Service 3: The Backend (Flask) ---
+  backend:
+    build: ./backend
+    container_name: study_companion_backend
+    ports:
+      - "9000:9000"
+    environment:
+      # IMPORTANT: Points to the 'ollama' container, not localhost
+      - OLLAMA_API_URL=http://ollama:11434
+      - SECRET_KEY=docker_dev_key
+    volumes:
+      - ./backend/uploads:/app/uploads # Persist user PDFs
+      - ./backend/telemetry_logs.jsonl:/app/telemetry_logs.jsonl
+      - ./backend:/app # Hot-reload: Sync code changes immediately
+    depends_on:
+      ollama:
+        condition: service_healthy
+
+  # --- Service 4: The Frontend (React/Vite) ---
+  frontend:
+    build: ./frontend
+    container_name: study_companion_frontend
+    ports:
+      - "8080:8080"
+    environment:
+      - CHOKIDAR_USEPOLLING=true # Essential for Windows hot-reloading
+    volumes:
+      - ./frontend/src:/app/src # Hot-reload: Sync frontend changes
+    depends_on:
+      - backend
+
+volumes:
+  ollama_data:
